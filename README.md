@@ -1,1 +1,1 @@
-# teck_tasks
+# tech_tasks

@@ -3,9 +3,11 @@
   hosts: test_servers
   become: yes
 
+  pre_tasks:
+  - name: update apt cache if needed
+    apt: update_cache=yes cache_valid_time=86400 #One day
+
   tasks:
-  - name: update cache
-    apt: 
   - name: install packages
     apt: name={{item}} state=latest
     with_items:
@@ -22,7 +24,6 @@
   hosts: test_servers
   
   vars:
-    #requirements_source_file: /home/vagrant/ansible/deploy/python_app/requirements.txt
     requirements_dest_file: /home/{{ ansible_user }}/{{ app_name }}/requirements.txt 
 
   tasks:
@@ -57,9 +58,12 @@
   tasks:
   - name: Copy systemd service file for Gunicorn and python web app
     template: src=./{{ app_name }}.service dest=/etc/systemd/system/{{ app_name }}.service
+  - name: Start systemd app service 
+    systemd: name={{ app_name }}.service state=started enabled=yes
+    
   - name: Copy nginx site config
     template: src=./{{ app_name }}_nginx_conf dest=/etc/nginx/sites-available/{{ app_name }}
-    #notify: Restart Nginx
+    notify: Restart Nginx
   - name: Remove default nginx site config
     file: path=/etc/nginx/sites-enabled/default state=absent
   - name: Create a nginx symlink
@@ -68,11 +72,11 @@
       dest: /etc/nginx/sites-enabled/default
       state: link
       force: yes
-    #notify: Restart Nginx
+    notify: Restart Nginx
 
-  - name: Restart nginx
-    systemd: name=nginx state=restarted enabled=yes
+  #- name: Restart nginx
+  #  systemd: name=nginx state=restarted enabled=yes
   
- # handlers:
- #   - name: Restart Nginx
- #     systemd: name=nginx state=restarted enabled=yes
+  handlers:
+  - name: Restart Nginx
+    systemd: name=nginx state=restarted enabled=yes

@@ -1,2 +1,2 @@
 [test_servers]
-ubuntu20 ansible_host=10.0.0.2
+ubuntu ansible_host=10.10.10.2 owner=YB

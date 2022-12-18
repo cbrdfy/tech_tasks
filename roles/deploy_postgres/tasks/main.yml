@@ -1,0 +1,24 @@
+---
+# tasks file for deploy_postgres
+
+- name: Install Python packages
+  apt: name=python3-psycopg2 state=latest
+
+- name: Install PostgreSQL packages
+  apt: name=postgresql state=latest
+
+- name: Install ACL to prevent a failure 
+  apt: name=acl state=latest
+
+- name: Start and enable service
+  systemd: name=postgresql state=started enabled=yes
+
+- name: Create test DB
+  postgresql_db: state=present name={{ db_name }}
+  become: yes
+  become_user: postgres
+
+- name: Create db user
+  postgresql_user: state=present name={{ ansible_user }} password={{ db_password }}
+  become: yes
+  become_user: postgres

@@ -1,0 +1,12 @@
+---
+- name: Deploy python web app and PostgreSQL
+  hosts: test_servers
+
+  pre_tasks:
+  - name: Update apt cache if needed
+    apt: update_cache=yes cache_valid_time=86400 #One day
+    become: yes
+
+  roles:
+    - { role: deploy_python_web_app, when: ansible_system == 'Linux' }
+    - { role: deploy_postgres, become: yes, when: ansible_system == 'Linux' }

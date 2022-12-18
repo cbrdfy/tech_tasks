@@ -1,0 +1,13 @@
+<html>
+<head>
+<title>Test App</title>
+</head>
+<body>
+<h1>This is the Index page</h1>
+Owened by - {{ owner }}<br>
+Server attributes:<br>
+hostname: {{ ansible_hostname }}<br>
+os_family: {{ ansible_os_family }}<br>
+ipv4: {{ ansible_default_ipv4.address }}
+</body>
+</html>  

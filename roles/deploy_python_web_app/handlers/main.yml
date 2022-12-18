@@ -1,0 +1,4 @@
+---
+# handlers file for deploy_python_web_app
+- name: Restart Nginx
+  systemd: name=nginx state=restarted enabled=yes

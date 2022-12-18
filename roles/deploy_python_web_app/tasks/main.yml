@@ -1,0 +1,83 @@
+---
+# tasks file for deploy_python_web_app
+
+# Install unnecessary packages
+- name: install packages
+  apt: name={{item}} state=latest
+  with_items:
+    - python3-pip
+    - python3-dev
+    - python3-setuptools
+    - nginx
+  become: yes
+
+- name: Install virtualenv via pip as root
+  pip:
+    name: virtualenv
+    executable: pip3
+  become: yes
+
+# Install requirements for the python web app
+- name: Create a directory for python web_app
+  file:
+    path: /home/{{ ansible_user }}/{{ app_name }}
+    state: directory
+
+- name: Create a templates dir inside web_app dir
+  file:
+    path: /home/{{ ansible_user }}/{{ app_name }}/templates
+    state: directory
+
+- name: Copy requirements file to the server
+  copy: src=requirements.txt dest={{ requirements_dest_file }} mode=0444
+
+- name: Copy python app to the server
+  copy: 
+    src: "{{ app_name }}.py"
+    dest: /home/{{ ansible_user }}/{{ app_name }}/{{ app_name }}.py 
+
+- name: Generate index.j2 file
+  template:
+    src: index.j2
+    dest: /home/{{ ansible_user }}/{{ app_name }}/templates/index.html
+
+- name: Copy wsgi interface to the server
+  copy: 
+    src: wsgi.py 
+    dest: /home/{{ ansible_user }}/{{ app_name }}/wsgi.py 
+
+- name: Install required modules in virtualenv
+  pip:
+    requirements: /home/{{ ansible_user }}/{{ app_name }}/requirements.txt 
+    virtualenv: /home/{{ ansible_user }}/{{ app_name }}/env
+    virtualenv_python: python3
+
+# Configure python web app and nginx
+- name: Generate systemd service file for Gunicorn and python web app
+  template: src={{ app_name }}_service.j2 dest=/etc/systemd/system/{{ app_name }}.service
+  become: yes
+
+- name: Start systemd app service 
+  systemd: name={{ app_name }}.service state=started enabled=yes
+  become: yes
+    
+- name: Generate nginx site config
+  template: src={{ app_name }}_nginx_conf.j2 dest=/etc/nginx/sites-available/{{ app_name }}
+  notify: Restart Nginx
+  become: yes
+
+- name: Remove default nginx site config
+  file: path=/etc/nginx/sites-enabled/default state=absent
+  become: yes
+
+- name: Create nginx symlink
+  file: 
+    src: /etc/nginx/sites-available/{{ app_name }}
+    dest: /etc/nginx/sites-enabled
+    state: link
+    force: yes
+  notify: Restart Nginx
+  become: yes
+
+#- name: Restart nginx
+#  systemd: name=nginx state=restarted enabled=yes
